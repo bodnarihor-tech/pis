@@ -7,5 +7,5 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Додаємо файл із кодом
 add_executable(LibraryManagement main.cpp
-        LABA.cpp
+        main.cpp
         LABA.h)
