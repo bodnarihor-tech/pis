@@ -1,108 +1,109 @@
 #include <iostream>
 #include <string>
-#include <utility> // Для std::move
+#include <utility>
 
-// --- Клас 1: Книга ---
+// --- Клас 1: Книга (З усіма фішками ЛР3) ---
 class Book {
 private:
     std::string title;
     std::string author;
     int year;
-
-    // 1. Static поле: лічильник усіх створених книг (ЛР3)
-    static int totalBooks;
+    static int totalBooks; // Static поле
 
 public:
-    // Конструктор з використанням this та списком ініціалізації (ЛР2 + ЛР3)
+    // Конструктор + this
     Book(std::string title, std::string author, int year) {
-        this->title = title;   // Використання this (ЛР3)
+        this->title = title;
         this->author = author;
         this->year = year;
         totalBooks++;
     }
 
-    // Параметри за замовчуванням (ЛР2)
     Book() : Book("Unknown", "None", 2026) {}
 
-    // 2. Конструктор копіювання (Copy Constructor) (ЛР3)
-    Book(const Book& other)
-        : title(other.title), author(other.author), year(other.year) {
+    // Конструктор копіювання
+    Book(const Book& other) : title(other.title), author(other.author), year(other.year) {
         totalBooks++;
-        std::cout << "[Copy] Створено копію книги: " << title << "\n";
+        std::cout << "[Copy] Копія книги: " << title << "\n";
     }
 
-    // 3. Конструктор переміщення (Move Constructor) (ЛР3)
-    Book(Book&& other) noexcept
-        : title(std::move(other.title)),
-          author(std::move(other.author)),
-          year(other.year) {
+    // Конструктор переміщення
+    Book(Book&& other) noexcept : title(std::move(other.title)), author(std::move(other.author)), year(other.year) {
         other.year = 0;
-        std::cout << "[Move] Ресурси книги переміщено: " << title << "\n";
+        std::cout << "[Move] Ресурси переміщено: " << title << "\n";
     }
 
-    // Деструктор
-    ~Book() {
-        std::cout << "[Destructor] Book removed: " << title << "\n";
+    ~Book() { std::cout << "[Destructor] Book removed: " << title << "\n"; }
+
+    static int getTotalBooks() { return totalBooks; }
+
+    void displayInfo() const { // Const метод
+        std::cout << "Книга: " << title << " (" << year << ")\n";
     }
 
-    // 4. Static метод (ЛР3)
-    static int getTotalBooks() {
-        return totalBooks;
+    bool operator==(const Book& other) const { // Оператор ==
+        return (this->title == other.title);
     }
 
-    // 5. Const метод (ЛР3)
-    void displayInfo() const {
-        std::cout << "Книга: " << title << " | Автор: " << author << " (" << year << ")\n";
-    }
-
-    // 6. Перевантаження бінарного оператора == (ЛР3)
-    bool operator==(const Book& other) const {
-        return (this->title == other.title && this->author == other.author);
-    }
-
-    // 7. Перевантаження унарного оператора ++ (ЛР3)
-    Book& operator++() {
+    Book& operator++() { // Оператор ++
         this->year++;
         return *this;
     }
 
-    // 8. Дружній оператор виведення << (ЛР3)
-    friend std::ostream& operator<<(std::ostream& os, const Book& b) {
-        os << "Book: '" << b.title << "' by " << b.author;
+    friend std::ostream& operator<<(std::ostream& os, const Book& b) { // Оператор <<
+        os << "Book: '" << b.title << "'";
         return os;
     }
 };
 
-// Ініціалізація статичного поля
 int Book::totalBooks = 0;
+
+// --- Клас 2: Читач (З ЛР2) ---
+class Reader {
+private:
+    std::string name;
+    int readerID;
+public:
+    Reader(std::string n, int id) : name(n), readerID(id) {}
+    Reader() : Reader("Guest", 0) {} // Делегування
+
+    void display() const {
+        std::cout << "Reader: " << name << " | ID: " << readerID << "\n";
+    }
+};
+
+// --- Клас 3: Бібліотекар (З ЛР2) ---
+class Librarian {
+private:
+    std::string empName;
+    int accessLevel;
+public:
+    Librarian(std::string name, int level) : empName(name), accessLevel(level) {}
+
+    void logAction(std::string action) const {
+        std::cout << "Librarian " << empName << " виконує: " << action << "\n";
+    }
+};
 
 int main() {
     std::cout << "=== Library Management System (LR3) ===\n\n";
 
-    // Демонстрація Static
+    // Працюємо з Книгами (ЛР3)
     Book b1("1984", "George Orwell", 1949);
-    Book b2("Fahrenheit 451", "Ray Bradbury", 1953);
-    std::cout << "Загальна кількість книг (static): " << Book::getTotalBooks() << "\n\n";
+    Book b2("Kobzar", "T. Shevchenko", 1840);
 
-    // Демонстрація Const об'єкта
-    const Book classic("Kobzar", "T. Shevchenko", 1840);
-    classic.displayInfo();
+    std::cout << "Всього книг (static): " << Book::getTotalBooks() << "\n";
 
-    // Демонстрація Copy Constructor
-    std::cout << "\n--- Тест копіювання ---\n";
-    Book b3 = b1;
+    Book b3 = b1; // Тест копіювання
+    ++b1;         // Тест оператора ++
+    std::cout << b1 << " (через оператор <<)\n\n";
 
-    // Демонстрація Move Constructor
-    std::cout << "\n--- Тест переміщення ---\n";
-    Book b4 = std::move(b2);
+    // Повертаємо Читачів та Бібліотекарів (ЛР2)
+    Reader r1("Andriy", 777);
+    Librarian admin("Olena Petrivna", 5);
 
-    // Демонстрація операторів
-    std::cout << "\n--- Тест операторів ---\n";
-    if (b1 == b3) std::cout << "b1 та b3 однакові (operator==)\n";
+    r1.display();
+    admin.logAction("Перевірка ЛР №3");
 
-    ++b1; // operator++
-    std::cout << "Після ++ (рік видання змінено): " << b1 << " (operator<<)\n";
-
-    std::cout << "\n=== Завершення програми ===\n";
     return 0;
 }
