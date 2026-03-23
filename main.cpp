@@ -2,108 +2,118 @@
 #include <string>
 #include <utility>
 
-// --- Клас 1: Книга (З усіма фішками ЛР3) ---
-class Book {
+// --- 1. БАЗОВИЙ КЛАС (Вгору по ієрархії) ---
+class Person {
+protected:
+    std::string name;
+public:
+    Person(std::string n) : name(n) {
+        std::cout << "[Constructor] Person: " << name << "\n";
+    }
+    virtual ~Person() {
+        std::cout << "[Destructor] Person: " << name << "\n";
+    }
+};
+
+// --- 2. НАСЛІДУВАННЯ "Is-A" (Reader є Person) ---
+class Reader : public Person {
 private:
+    int readerID;
+public:
+    Reader(std::string n, int id) : Person(n), readerID(id) {
+        std::cout << "[Constructor] Reader ID: " << readerID << "\n";
+    }
+
+    void show() const {
+        std::cout << "Читач: " << name << " | ID: " << readerID << "\n";
+    }
+};
+
+// --- 3. КЛАС КНИГА ---
+class Book {
+protected:
     std::string title;
     std::string author;
-    int year;
-    static int totalBooks; // Static поле
-
 public:
-    // Конструктор + this
-    Book(std::string title, std::string author, int year) {
-        this->title = title;
-        this->author = author;
-        this->year = year;
-        totalBooks++;
+    Book(std::string t, std::string a) : title(t), author(a) {}
+    virtual ~Book() {}
+
+    virtual void display() const {
+        std::cout << "Книга: " << title << " | Автор: " << author << "\n";
+    }
+};
+
+// --- 4. НАСЛІДУВАННЯ "Is-A" (Вниз по ієрархії: Електронна книга) ---
+class EBook : public Book {
+private:
+    double fileSize;
+    std::string format;
+public:
+    EBook(std::string t, std::string a, double size, std::string fmt)
+        : Book(t, a), fileSize(size), format(fmt) {}
+
+    // ПУНКТ 6: Copy Constructor
+    EBook(const EBook& other) : Book(other), fileSize(other.fileSize), format(other.format) {
+        std::cout << "[Copy] Копіювання EBook: " << title << "\n";
     }
 
-    Book() : Book("Unknown", "None", 2026) {}
-
-    // Конструктор копіювання
-    Book(const Book& other) : title(other.title), author(other.author), year(other.year) {
-        totalBooks++;
-        std::cout << "[Copy] Копія книги: " << title << "\n";
+    // ПУНКТ 6: Move Constructor (ДОДАНО)
+    EBook(EBook&& other) noexcept
+        : Book(std::move(other)), fileSize(other.fileSize), format(std::move(other.format)) {
+        other.fileSize = 0;
+        std::cout << "[Move] Переміщення EBook: " << title << "\n";
     }
 
-    // Конструктор переміщення
-    Book(Book&& other) noexcept : title(std::move(other.title)), author(std::move(other.author)), year(other.year) {
-        other.year = 0;
-        std::cout << "[Move] Ресурси переміщено: " << title << "\n";
-    }
-
-    ~Book() { std::cout << "[Destructor] Book removed: " << title << "\n"; }
-
-    static int getTotalBooks() { return totalBooks; }
-
-    void displayInfo() const { // Const метод
-        std::cout << "Книга: " << title << " (" << year << ")\n";
-    }
-
-    bool operator==(const Book& other) const { // Оператор ==
-        return (this->title == other.title);
-    }
-
-    Book& operator++() { // Оператор ++
-        this->year++;
+    // ПУНКТ 6: Operator=
+    EBook& operator=(const EBook& other) {
+        if (this != &other) {
+            Book::operator=(other); // Копіюємо частину базового класу
+            this->fileSize = other.fileSize;
+            this->format = other.format;
+            std::cout << "[Operator=] Присвоєння EBook: " << title << "\n";
+        }
         return *this;
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const Book& b) { // Оператор <<
-        os << "Book: '" << b.title << "'";
-        return os;
+    void display() const override {
+        std::cout << "Е-Книга: " << title << " [" << format << ", " << fileSize << "MB]\n";
     }
 };
 
-int Book::totalBooks = 0;
-
-// --- Клас 2: Читач (З ЛР2) ---
-class Reader {
+// --- 5. КОМПОЗИЦІЯ "Has-A" ---
+class Library {
 private:
-    std::string name;
-    int readerID;
+    std::string libName;
+    Book* featuredBook; // Бібліотека МАЄ книгу (агрегація/композиція)
 public:
-    Reader(std::string n, int id) : name(n), readerID(id) {}
-    Reader() : Reader("Guest", 0) {} // Делегування
+    Library(std::string name, Book* b) : libName(name), featuredBook(b) {}
 
-    void display() const {
-        std::cout << "Reader: " << name << " | ID: " << readerID << "\n";
-    }
-};
-
-// --- Клас 3: Бібліотекар (З ЛР2) ---
-class Librarian {
-private:
-    std::string empName;
-    int accessLevel;
-public:
-    Librarian(std::string name, int level) : empName(name), accessLevel(level) {}
-
-    void logAction(std::string action) const {
-        std::cout << "Librarian " << empName << " виконує: " << action << "\n";
+    void info() const {
+        std::cout << "\nБібліотека: " << libName << "\nРекомендована книга: ";
+        if (featuredBook) featuredBook->display();
     }
 };
 
 int main() {
-    std::cout << "=== Library Management System (LR3) ===\n\n";
+    std::cout << "=== Лабораторна робота №4 (Наслідування) ===\n\n";
 
-    // Працюємо з Книгами (ЛР3)
-    Book b1("1984", "George Orwell", 1949);
-    Book b2("Kobzar", "T. Shevchenko", 1840);
+    // Демонстрація ієрархії
+    Reader student("Bodnar Ihor", 101);
+    student.show();
 
-    std::cout << "Всього книг (static): " << Book::getTotalBooks() << "\n";
+    std::cout << "\n--- Робота з EBook (Copy/Move/Assign) ---\n";
+    EBook eb1("Kobzar", "T. Shevchenko", 15.5, "PDF");
 
-    Book b3 = b1; // Тест копіювання
-    ++b1;         // Тест оператора ++
-    std::cout << b1 << " (через оператор <<)\n\n";
+    EBook eb2 = eb1;               // Copy
+    EBook eb3 = std::move(eb1);    // Move (тепер eb1 порожня в плані ресурсів)
 
-    // Повертаємо Читачів та Бібліотекарів (ЛР2)
-    Reader r1("Andriy", 777);
-    Librarian admin("Olena Petrivna", 5);
+    eb2.display();
+    eb3.display();
 
-    r1.display();
-    admin.logAction("Перевірка ЛР №3");
+    std::cout << "\n--- Композиція (Has-A) ---\n";
+    Library myLib("Zentral Library", &eb3);
+    myLib.info();
 
+    std::cout << "\n=== Завершення програми ===\n";
     return 0;
 }
