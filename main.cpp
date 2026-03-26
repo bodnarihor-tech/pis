@@ -1,119 +1,139 @@
 #include <iostream>
 #include <string>
+#include <vector>
 #include <utility>
 
-// --- 1. БАЗОВИЙ КЛАС (Вгору по ієрархії) ---
-class Person {
+// ==========================================
+// ЛАБ 5: ІНТЕРФЕЙС
+// ==========================================
+class IPrintable {
+public:
+    virtual void printStatus() const = 0;
+    virtual ~IPrintable() {}
+};
+
+// ==========================================
+// ЛАБ 4: КОМПОЗИЦІЯ (Has-A Relationship)
+// ==========================================
+class ContactInfo {
+public:
+    std::string email;
+    ContactInfo(std::string e = "no-email") : email(e) {}
+};
+
+// ==========================================
+// ЛАБ 5: АБСТРАКТНИЙ БАЗОВИЙ КЛАС
+// ==========================================
+class Entity {
 protected:
     std::string name;
+    // ЛАБ 3: STATIC поле
+    static int totalEntities;
+
 public:
-    Person(std::string n) : name(n) {
-        std::cout << "[Constructor] Person: " << name << "\n";
+    // ЛАБ 2: Конструктор з параметром за замовчуванням
+    // ЛАБ 2: Список ініціалізації
+    Entity(std::string n = "Unknown") : name(n) {
+        totalEntities++;
+        std::cout << "[Constructor] Entity: " << name << "\n";
     }
-    virtual ~Person() {
-        std::cout << "[Destructor] Person: " << name << "\n";
+
+    // ЛАБ 5: ВІРТУАЛЬНИЙ ДЕСТРУКТОР
+    virtual ~Entity() {
+        totalEntities--;
+        std::cout << "[Destructor] Entity: " << name << "\n";
+    }
+
+    // ЛАБ 3: STATIC метод
+    static int getTotalCount() { return totalEntities; }
+
+    // ЛАБ 5: Статична прив'язка (Static Binding)
+    void identify() const {
+        std::cout << "Базовий Entity: " << name << " (Static Binding)\n";
+    }
+
+    virtual void performAction() const {
+        std::cout << name << " виконує базову дію.\n";
+    }
+
+    // ЛАБ 5: Чисто віртуальна функція
+    virtual void getRole() const = 0;
+
+    // ЛАБ 3: Перевантаження оператора << (Friend)
+    friend std::ostream& operator<<(std::ostream& os, const Entity& e) {
+        os << "Entity Name: " << e.name;
+        return os;
     }
 };
 
-// --- 2. НАСЛІДУВАННЯ "Is-A" (Reader є Person) ---
-class Reader : public Person {
+int Entity::totalEntities = 0; // Ініціалізація static
+
+// ==========================================
+// ДОЧІРНІЙ КЛАС: Reader
+// ==========================================
+class Reader : public Entity, public IPrintable {
 private:
     int readerID;
+    ContactInfo contact; // ЛАБ 4: Композиція
+
 public:
-    Reader(std::string n, int id) : Person(n), readerID(id) {
+    // ЛАБ 2: ДЕЛЕГУВАННЯ конструкторів
+    Reader() : Reader("Guest", 0) {}
+
+    Reader(std::string n, int id) : Entity(n), readerID(id) {
         std::cout << "[Constructor] Reader ID: " << readerID << "\n";
     }
 
-    void show() const {
-        std::cout << "Читач: " << name << " | ID: " << readerID << "\n";
+    // ЛАБ 3 & 4: COPY Constructor
+    Reader(const Reader& other) : Entity(other), readerID(other.readerID), contact(other.contact) {
+        std::cout << "[Copy Constructor] Reader\n";
+    }
+
+    // ЛАБ 3 & 4: MOVE Constructor
+    Reader(Reader&& other) noexcept : Entity(std::move(other)), readerID(other.readerID), contact(std::move(other.contact)) {
+        std::cout << "[Move Constructor] Reader\n";
+    }
+
+    // ЛАБ 3: Використання THIS
+    void setID(int readerID) {
+        this->readerID = readerID;
+    }
+
+    // ЛАБ 5: OVERRIDE та FINAL
+    void getRole() const override final {
+        std::cout << "Роль: Читач (ID: " << readerID << ")\n";
+    }
+
+    void performAction() const override {
+        std::cout << "Читач " << name << " читає книгу.\n";
+    }
+
+    void printStatus() const override {
+        std::cout << "[STATUS] Читач " << name << " активний.\n";
     }
 };
 
-// --- 3. КЛАС КНИГА ---
-class Book {
-protected:
-    std::string title;
-    std::string author;
-public:
-    Book(std::string t, std::string a) : title(t), author(a) {}
-    virtual ~Book() {}
-
-    virtual void display() const {
-        std::cout << "Книга: " << title << " | Автор: " << author << "\n";
-    }
-};
-
-// --- 4. НАСЛІДУВАННЯ "Is-A" (Вниз по ієрархії: Електронна книга) ---
-class EBook : public Book {
-private:
-    double fileSize;
-    std::string format;
-public:
-    EBook(std::string t, std::string a, double size, std::string fmt)
-        : Book(t, a), fileSize(size), format(fmt) {}
-
-    // ПУНКТ 6: Copy Constructor
-    EBook(const EBook& other) : Book(other), fileSize(other.fileSize), format(other.format) {
-        std::cout << "[Copy] Копіювання EBook: " << title << "\n";
-    }
-
-    // ПУНКТ 6: Move Constructor (ДОДАНО)
-    EBook(EBook&& other) noexcept
-        : Book(std::move(other)), fileSize(other.fileSize), format(std::move(other.format)) {
-        other.fileSize = 0;
-        std::cout << "[Move] Переміщення EBook: " << title << "\n";
-    }
-
-    // ПУНКТ 6: Operator=
-    EBook& operator=(const EBook& other) {
-        if (this != &other) {
-            Book::operator=(other); // Копіюємо частину базового класу
-            this->fileSize = other.fileSize;
-            this->format = other.format;
-            std::cout << "[Operator=] Присвоєння EBook: " << title << "\n";
-        }
-        return *this;
-    }
-
-    void display() const override {
-        std::cout << "Е-Книга: " << title << " [" << format << ", " << fileSize << "MB]\n";
-    }
-};
-
-// --- 5. КОМПОЗИЦІЯ "Has-A" ---
-class Library {
-private:
-    std::string libName;
-    Book* featuredBook; // Бібліотека МАЄ книгу (агрегація/композиція)
-public:
-    Library(std::string name, Book* b) : libName(name), featuredBook(b) {}
-
-    void info() const {
-        std::cout << "\nБібліотека: " << libName << "\nРекомендована книга: ";
-        if (featuredBook) featuredBook->display();
-    }
-};
+// Демонстрація поліморфізму через ПОСИЛАННЯ (ЛАБ 5, п.6)
+void showAction(const Entity& e) {
+    e.performAction();
+}
 
 int main() {
-    std::cout << "=== Лабораторна робота №4 (Наслідування) ===\n\n";
+    // ЛАБ 3: CONST об'єкт
+    const Reader constReader("Admin", 1);
+    // constReader.setID(5); // Помилка, бо об'єкт константний - ДЕМОНСТРАЦІЯ ЛАБ 3
 
-    // Демонстрація ієрархії
-    Reader student("Bodnar Ihor", 101);
-    student.show();
+    // ЛАБ 5: Динамічний поліморфізм (Pointer)
+    Entity* ptr = new Reader("Ihor", 123);
 
-    std::cout << "\n--- Робота з EBook (Copy/Move/Assign) ---\n";
-    EBook eb1("Kobzar", "T. Shevchenko", 15.5, "PDF");
+    std::cout << "Total Entities: " << Entity::getTotalCount() << "\n";
 
-    EBook eb2 = eb1;               // Copy
-    EBook eb3 = std::move(eb1);    // Move (тепер eb1 порожня в плані ресурсів)
+    ptr->identify();      // Static binding (викличе базу)
+    ptr->performAction(); // Dynamic binding (викличе Reader)
 
-    eb2.display();
-    eb3.display();
+    showAction(*ptr);     // ЛАБ 5: Через посилання
 
-    std::cout << "\n--- Композиція (Has-A) ---\n";
-    Library myLib("Zentral Library", &eb3);
-    myLib.info();
+    delete ptr;           // Виклик віртуального деструктора
 
-    std::cout << "\n=== Завершення програми ===\n";
     return 0;
 }
