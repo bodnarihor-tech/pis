@@ -11,14 +11,22 @@ protected:
     std::string name;
 
 public:
+    // Конструктор ініціалізації базових полів
     BaseEntity(int id, std::string name);
-    virtual ~BaseEntity(); // Віртуальний деструктор (пункт №4)
 
-    virtual void getInfo() const; // Віртуальна функція (пункт №2)
-    
-    // Реалізація інтерфейсу (пункт №7)
+    // Віртуальний деструктор для коректного видалення об'єктів через вказівники
+    virtual ~BaseEntity();
+
+    // Геттери для доступу до приватних полів (необхідні для пошуку та збереження у файл)
+    int getId() const { return id; }
+    std::string getName() const { return name; }
+
+    // Віртуальні методи для реалізації поліморфізму
+    virtual void getInfo() const;
+
+    // Реалізація методу інтерфейсу IPrintable
     void printTechnicalInfo() const override {
-        std::cout << "[ID: " << id << "] Назва сутності: " << name << "\n";
+        std::cout << "[ID: " << id << "] Назва: " << name << "\n";
     }
 };
 

@@ -8,4 +8,7 @@ add_executable(LibraryManagement
         BaseEntity.cpp
         LibraryItem.cpp
         Book.cpp
+        LibraryManager.cpp
+        LibraryManager.cpp
+        LibraryManager.h
 )
